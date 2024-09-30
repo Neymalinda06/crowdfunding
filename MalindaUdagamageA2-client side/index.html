@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crowdfunding Platform</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    
+    function showSection(sectionId) {
+      const sections = document.querySelectorAll('.section');
+      sections.forEach(section => {
+        section.style.display = 'none'; 
+      });
+      document.getElementById(sectionId).style.display = 'block'; 
+
+      
+      if (sectionId === 'home') {
+        fetchFundraisers();
+      }
+    }
+
+    // All fundraisers 
+    async function fetchFundraisers() {
+      const response = await fetch('http://localhost:3000/fundraisers');
+      const fundraisers = await response.json();
+
+      let output = '';
+      fundraisers.forEach(fundraiser => {
+        output += `
+          <div class="fundraiser">
+            <h3>${fundraiser.CAPTION}</h3>
+            <p><strong>Organizer:</strong> ${fundraiser.ORGANIZER}</p>
+            <p><strong>Target Funding:</strong> $${fundraiser.TARGET_FUNDING}</p>
+            <p><strong>Current Funding:</strong> $${fundraiser.CURRENT_FUNDING}</p>
+            <p><strong>City:</strong> ${fundraiser.CITY}</p>
+            <p><strong>Category:</strong> ${fundraiser.CATEGORY_NAME}</p>
+            <button onclick="showFundraiserDetails(${fundraiser.FUNDRAISER_ID})">View Details</button>
+          </div>
+          <hr>
+        `;
+      });
+
+      document.getElementById('fundraisers').innerHTML = output;
+    }
+
+    // Search fundraisers
+    async function searchFundraisers() {
+      const organizer = document.getElementById('searchOrganizer').value;
+      const city = document.getElementById('searchCity').value;
+      const category = document.getElementById('searchCategory').value;
+
+      
+      if (!organizer && !city && !category) {
+        document.getElementById('searchResults').innerHTML = '<p class="error">Please enter at least one search criterion.</p>';
+        return;
+      }
+
+      
+      const response = await fetch(`http://localhost:3000/fundraisers/search?organizer=${organizer}&city=${city}&category=${category}`);
+      const fundraisers = await response.json();
+
+      // Display search results
+      let output = '';
+      if (fundraisers.length > 0) {
+        fundraisers.forEach(fundraiser => {
+          output += `
+            <div class="fundraiser">
+              <h3>${fundraiser.CAPTION}</h3>
+              <p><strong>Organizer:</strong> ${fundraiser.ORGANIZER}</p>
+              <p><strong>City:</strong> ${fundraiser.CITY}</p>
+              <p><strong>Category:</strong> ${fundraiser.CATEGORY_NAME}</p>
+              <a href="#" onclick="showFundraiserDetails(${fundraiser.FUNDRAISER_ID})">View Details</a>
+            </div>
+            <hr>
+          `;
+        });
+      } else {
+        output = '<p class="error">No fundraisers found based on your search criteria.</p>';
+      }
+
+      document.getElementById('searchResults').innerHTML = output;
+    }
+
+    // Show fundraiser details by ID
+    async function showFundraiserDetails(fundraiserId) {
+      showSection('fundraiserDetails'); 
+
+      const response = await fetch(`http://localhost:3000/fundraiser/${fundraiserId}`);
+      const fundraiser = await response.json();
+
+      document.getElementById('fundraiserDetailContent').innerHTML = `
+        <h2>${fundraiser.CAPTION}</h2>
+        <p><strong>Organizer:</strong> ${fundraiser.ORGANIZER}</p>
+        <p><strong>Target Funding:</strong> $${fundraiser.TARGET_FUNDING}</p>
+        <p><strong>Current Funding:</strong> $${fundraiser.CURRENT_FUNDING}</p>
+        <p><strong>City:</strong> ${fundraiser.CITY}</p>
+        <p><strong>Category:</strong> ${fundraiser.CATEGORY_NAME}</p>
+        <button onclick="alert('This feature is under construction')">Donate</button>
+      `;
+    }
+
+    
+    window.onload = () => {
+      showSection('home'); 
+    }
+  </script>
+</head>
+<body>
+  <div class="topnav">
+    <a href="#" onclick="showSection('home')">Home</a>
+    <a href="#" onclick="showSection('search')">Search Fundraisers</a>
+    <a href="#" onclick="showSection('fundraiserDetails')">Fundraiser Details</a>
+  </div>
+
+  <div id="home" class="section">
+    <h1>Welcome to Our Crowdfunding Platform</h1>
+    <div id="fundraisers"></div>
+  </div>
+
+  <div id="search" class="section" style="display: none;">
+    <h1>Search Fundraisers</h1>
+    <form onsubmit="event.preventDefault(); searchFundraisers();">
+      <input type="text" id="searchOrganizer" placeholder="Organizer">
+      <input type="text" id="searchCity" placeholder="City">
+      <input type="text" id="searchCategory" placeholder="Category">
+      <button type="submit">Search</button>
+    </form>
+    <div id="searchResults"></div>
+  </div>
+
+  <div id="fundraiserDetails" class="section" style="display: none;">
+    <h1>Fundraiser Details</h1>
+    <div id="fundraiserDetailContent"></div>
+  </div>
+</body>
+</html>
